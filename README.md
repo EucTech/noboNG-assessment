@@ -8,6 +8,11 @@ journey.
 
 Customers can view products, add products to their cart, complete checkout, make a simulated payment, and create an order.
 
+## Live Demo
+
+- Frontend: https://frontend-ebon-tau-11.vercel.app
+- Backend API: https://nobong-assessment-dev.up.railway.app/api
+
 ## Technologies Used
 
 ### Frontend
@@ -19,6 +24,8 @@ Customers can view products, add products to their cart, complete checkout, make
 - Zustand
 - React Hook Form
 - Zod
+- Axios
+- Tanstack
 
 ### Backend
 
@@ -76,7 +83,7 @@ Start the backend:
 
 The backend will run on:
 
-    http://localhost:4000/api
+    http://localhost:4000/api or nobong-assessment-dev.up.railway.app/api
 
 ### 3. Setup the Frontend
 
@@ -98,7 +105,7 @@ Start the frontend:
 
 The frontend will run on:
 
-    http://localhost:3000
+    http://localhost:3000 or https://frontend-ebon-tau-11.vercel.app
 
 ## Project / Architecture Structure
 
@@ -214,6 +221,7 @@ If I had more time, I would:
 
 - Integrate a real payment provider.
 - Add authentication and authorization.
+- Use axios to intercept 401,403 and 500 errors
 - Integrate logistics providers such as DHL and FedEx.
 - Add real-time shipment tracking.
 - Add Redis caching where needed.
