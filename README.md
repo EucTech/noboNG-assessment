@@ -35,6 +35,11 @@ Customers can view products, add products to their cart, complete checkout, make
 - Prisma
 - PostgreSQL
 
+### Deployment
+
+- Vercel for Frontend
+- Railway for Backend
+
 ### Testing
 
 - Jest
