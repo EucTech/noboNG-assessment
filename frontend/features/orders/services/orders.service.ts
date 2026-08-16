@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api-client";
+import { httpClient } from "@/lib/axios-client";
 import type { Order, OrderSummary } from "@/types";
 
 export function fetchOrder(id: string): Promise<Order> {
@@ -7,9 +8,10 @@ export function fetchOrder(id: string): Promise<Order> {
   });
 }
 
-export function fetchOrdersByEmail(email: string): Promise<OrderSummary[]> {
-  return apiRequest<OrderSummary[]>(
-    `/orders?email=${encodeURIComponent(email)}`,
-    { cache: "no-store" },
-  );
+export async function fetchOrdersByEmail(email: string): Promise<OrderSummary[]> {
+  const { data } = await httpClient.get<OrderSummary[]>("/orders", {
+    params: { email },
+  });
+
+  return data;
 }

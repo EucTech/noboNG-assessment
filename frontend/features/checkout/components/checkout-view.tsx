@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, ShoppingCart } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
@@ -21,26 +21,17 @@ import type { CheckoutCustomer } from "../validation/checkout.schema";
 export function CheckoutView() {
   const router = useRouter();
   const { items, totals, hydrated, clear } = useCart();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleDetailsSubmit = async (customer: CheckoutCustomer) => {
-    setSubmitting(true);
-    setErrorMessage(null);
+  const createOrderMutation = useMutation({
+    mutationFn: (customer: CheckoutCustomer) => createOrder(items, customer),
+  });
 
-    try {
-      setOrder(await createOrder(items, customer));
-    } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError
-          ? error.message
-          : "We could not confirm your order. Please try again.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const order = createOrderMutation.data ?? null;
+  const errorMessage = createOrderMutation.isError
+    ? createOrderMutation.error instanceof ApiError
+      ? createOrderMutation.error.message
+      : "We could not confirm your order. Please try again."
+    : null;
 
   const handlePaymentSuccess = (paidOrder: Order) => {
     clear();
@@ -106,7 +97,10 @@ export function CheckoutView() {
                 <span className="text-muted-foreground">{errorMessage}</span>
               </div>
             ) : null}
-            <CheckoutForm onSubmit={handleDetailsSubmit} submitting={submitting} />
+            <CheckoutForm
+              onSubmit={(customer) => createOrderMutation.mutate(customer)}
+              submitting={createOrderMutation.isPending}
+            />
           </>
         )}
       </div>

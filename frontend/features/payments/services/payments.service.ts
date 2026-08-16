@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api-client";
+import { httpClient } from "@/lib/axios-client";
 import type { PaymentResult } from "@/types";
 
 import type { PaymentMethodTokenValue } from "../types";
@@ -10,23 +10,23 @@ export function buildIdempotencyKey(
   return `PAY-${orderReference}-${String(attempt).padStart(3, "0")}`;
 }
 
-export function createPayment(input: {
+export async function createPayment(input: {
   orderId: string;
   idempotencyKey: string;
   paymentMethodToken: PaymentMethodTokenValue;
 }): Promise<PaymentResult> {
-  return apiRequest<PaymentResult>("/payments", {
-    method: "POST",
-    body: input,
-  });
+  const { data } = await httpClient.post<PaymentResult>("/payments", input);
+  return data;
 }
 
-export function retryPayment(
+export async function retryPayment(
   paymentId: string,
   paymentMethodToken: PaymentMethodTokenValue,
 ): Promise<PaymentResult> {
-  return apiRequest<PaymentResult>(
+  const { data } = await httpClient.post<PaymentResult>(
     `/payments/${encodeURIComponent(paymentId)}/retry`,
-    { method: "POST", body: { paymentMethodToken } },
+    { paymentMethodToken },
   );
+
+  return data;
 }

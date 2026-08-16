@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Loader2, PackageSearch, Search } from "lucide-react";
 import { z } from "zod";
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api-client";
-import type { OrderSummary } from "@/types";
 
 import { fetchOrdersByEmail } from "../services/orders.service";
 import { OrderSummaryCard } from "./order-summary-card";
@@ -24,11 +23,6 @@ const lookupSchema = z.object({
 type LookupValues = z.infer<typeof lookupSchema>;
 
 export function OrdersLookup() {
-  const [orders, setOrders] = useState<OrderSummary[] | null>(null);
-  const [searchedEmail, setSearchedEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const {
     register,
     handleSubmit,
@@ -38,31 +32,21 @@ export function OrdersLookup() {
     defaultValues: { email: "" },
   });
 
-  const onSubmit = async ({ email }: LookupValues) => {
-    setLoading(true);
-    setErrorMessage(null);
+  const lookup = useMutation({
+    mutationFn: ({ email }: LookupValues) => fetchOrdersByEmail(email),
+  });
 
-    try {
-      const results = await fetchOrdersByEmail(email);
-      setOrders(results);
-      setSearchedEmail(email);
-    } catch (error) {
-      setOrders(null);
-      setErrorMessage(
-        error instanceof ApiError
-          ? error.message
-          : "We could not look up your orders. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const errorMessage = lookup.isError
+    ? lookup.error instanceof ApiError
+      ? lookup.error.message
+      : "We could not look up your orders. Please try again."
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
       <form
         noValidate
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit((values) => lookup.mutate(values))}
         className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-end"
       >
         <div className="flex flex-1 flex-col gap-1.5">
@@ -83,9 +67,9 @@ export function OrdersLookup() {
           ) : null}
         </div>
 
-        <Button type="submit" disabled={loading} className="sm:w-fit">
-          {loading ? <Loader2 className="animate-spin" /> : <Search />}
-          {loading ? "Searching..." : "Find my orders"}
+        <Button type="submit" disabled={lookup.isPending} className="sm:w-fit">
+          {lookup.isPending ? <Loader2 className="animate-spin" /> : <Search />}
+          {lookup.isPending ? "Searching..." : "Find my orders"}
         </Button>
       </form>
 
@@ -93,17 +77,17 @@ export function OrdersLookup() {
         <ErrorState title="Unable to look up orders" description={errorMessage} />
       ) : null}
 
-      {orders && orders.length === 0 ? (
+      {lookup.isSuccess && lookup.data.length === 0 ? (
         <EmptyState
           icon={PackageSearch}
           title="No orders found"
-          description={`We could not find any orders placed with ${searchedEmail}.`}
+          description={`We could not find any orders placed with ${lookup.variables?.email}.`}
         />
       ) : null}
 
-      {orders && orders.length > 0 ? (
+      {lookup.isSuccess && lookup.data.length > 0 ? (
         <ul className="flex flex-col gap-3">
-          {orders.map((order) => (
+          {lookup.data.map((order) => (
             <OrderSummaryCard key={order.id} order={order} />
           ))}
         </ul>

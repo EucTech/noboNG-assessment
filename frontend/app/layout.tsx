@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
+import { QueryProvider } from "@/components/layout/query-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ThemeProvider } from "@/components/layout/theme-provider";
@@ -26,17 +27,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${GeistSans.variable} ${GeistMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <CartHydration />
-          <SiteHeader />
-          <main className="flex-1 pb-12">{children}</main>
-          <SiteFooter />
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <CartHydration />
+            <SiteHeader />
+            <main className="flex-1 pb-12">{children}</main>
+            <SiteFooter />
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { AlertCircle, Loader2, Lock, RotateCcw } from "lucide-react";
 
@@ -44,38 +45,31 @@ export function PaymentPanel({
   const [token, setToken] = useState<PaymentMethodTokenValue>(
     PaymentMethodToken.SUCCESS,
   );
-  const [submitting, setSubmitting] = useState(false);
   const [decline, setDecline] = useState<PaymentDeclineDetails | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handlePay = async () => {
-    setSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const result = decline
-        ? await retryPayment(decline.paymentId, token)
-        : await createPayment({
+  const paymentMutation = useMutation({
+    mutationFn: () =>
+      decline
+        ? retryPayment(decline.paymentId, token)
+        : createPayment({
             orderId: order.id,
             idempotencyKey: buildIdempotencyKey(order.reference, 1),
             paymentMethodToken: token,
-          });
-
-      onSuccess(result.order);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-
-        if (error.code === ApiErrorCode.PAYMENT_DECLINED) {
-          setDecline(toDeclineDetails(error.details));
-        }
-      } else {
-        setErrorMessage("The payment could not be completed. Please try again.");
+          }),
+    onSuccess: (result) => onSuccess(result.order),
+    onError: (error) => {
+      if (error instanceof ApiError && error.code === ApiErrorCode.PAYMENT_DECLINED) {
+        setDecline(toDeclineDetails(error.details));
       }
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+  });
+
+  const submitting = paymentMutation.isPending;
+  const errorMessage = paymentMutation.isError
+    ? paymentMutation.error instanceof ApiError
+      ? paymentMutation.error.message
+      : "The payment could not be completed. Please try again."
+    : null;
 
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
@@ -126,7 +120,7 @@ export function PaymentPanel({
 
       <Separator />
 
-      <Button size="lg" onClick={handlePay} disabled={submitting}>
+      <Button size="lg" onClick={() => paymentMutation.mutate()} disabled={submitting}>
         {submitting ? (
           <Loader2 className="animate-spin" />
         ) : decline ? (
