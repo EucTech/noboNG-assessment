@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductAvailability {
+  IN_STOCK
+  LIMITED_STOCK
+  OUT_OF_STOCK
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  PAYMENT_FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum ShipmentStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String
+  addressLine String
+  city        String
+  state       String
+  country     String   @default("Nigeria")
+  orders      Order[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Product {
+  id              String              @id @default(cuid())
+  slug            String              @unique
+  name            String
+  description     String
+  priceCents      Int
+  currency        String              @default("USD")
+  imageUrl        String
+  category        String
+  availability    ProductAvailability @default(IN_STOCK)
+  stockQuantity   Int                 @default(0)
+  deliveryMinDays Int
+  deliveryMaxDays Int
+  rating          Float               @default(0)
+  ratingCount     Int                 @default(0)
+  orderItems      OrderItem[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([category])
+  @@index([availability])
+  @@map("products")
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  reference     String      @unique
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  status        OrderStatus @default(PENDING_PAYMENT)
+  subtotalCents Int
+  shippingCents Int
+  totalCents    Int
+  currency      String      @default("USD")
+  items         OrderItem[]
+  payments      Payment[]
+  shipment      Shipment?
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName    String
+  productImage   String
+  quantity       Int
+  unitPriceCents Int
+  lineTotalCents Int
+
+  @@unique([orderId, productId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  idempotencyKey    String        @unique
+  attempt           Int
+  status            PaymentStatus @default(PENDING)
+  amountCents       Int
+  currency          String        @default("USD")
+  provider          String        @default("mock")
+  providerReference String?
+  failureReason     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([orderId, attempt])
+  @@index([orderId])
+  @@map("payments")
+}
+
+model Shipment {
+  id                String         @id @default(cuid())
+  orderId           String         @unique
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider          String         @default("pending_assignment")
+  trackingNumber    String?
+  status            ShipmentStatus @default(PENDING)
+  estimatedDelivery DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("shipments")
+}
