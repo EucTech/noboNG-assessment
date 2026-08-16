@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NoboNG Web
 
-## Getting Started
+Next.js App Router frontend for the NoboNG cross-border commerce journey.
 
-First, run the development server:
+Full documentation — architecture, pricing model, payment simulation and trade-offs — lives in
+the [root README](../README.md).
+
+## Quick start
+
+The API must be running first (see [`../backend`](../backend/README.md)).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
+pnpm install
+pnpm dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Script           | Purpose                     |
+| ---------------- | --------------------------- |
+| `pnpm dev`       | Dev server                  |
+| `pnpm build`     | Production build            |
+| `pnpm start`     | Serve the production build  |
+| `pnpm test`      | Vitest unit tests           |
+| `pnpm typecheck` | `tsc --noEmit`              |
+| `pnpm lint`      | ESLint                      |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Routes
 
-## Learn More
+| Route            | Rendering | Purpose                                          |
+| ---------------- | --------- | ------------------------------------------------ |
+| `/`              | Static    | Banner, value strip, product showcases           |
+| `/products`      | Dynamic   | Catalogue with category filter and sorting       |
+| `/products/[id]` | Dynamic   | Product detail, quantity picker, add to cart     |
+| `/cart`          | Client    | Line items, quantity, removal, running totals    |
+| `/checkout`      | Client    | Delivery form, then the simulated payment step   |
+| `/orders/[id]`   | Dynamic   | Persisted order, timeline, payment attempts      |
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/          routing and page composition only
+features/     products, cart, checkout, payments, orders, home
+components/   ui (shadcn), layout, common
+lib/          api client, formatters, utils
+types/        API response contracts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Business logic lives in `features/`, each with its own `components`, `services`, `hooks`,
+`store`, `validation`, `utils` and a barrel `index.ts`.
 
-## Deploy on Vercel
+## Theming
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Light and dark mode are driven by CSS custom properties in `app/globals.css` and toggled by
+`next-themes`. Brand colours are taken from the NoboNG logo: deep green `#0A5C2E` as the
+primary and `#FFC907` as the accent.
